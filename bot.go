@@ -21,6 +21,11 @@ func startBot(token string) {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
+	if token == "" {
+		log.Println("Error: The TG_BOT_TOKEN environment variable is not set")
+		return
+	}
+
 	opts := []bot.Option{
 		bot.WithDefaultHandler(handler),
 	}
