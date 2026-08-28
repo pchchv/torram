@@ -26,5 +26,16 @@ func getEnvValue(v string) string {
 }
 
 func main() {
+	downloadDir := getEnvValue("DOWNLOAD_DIR")
+	// Create a Downloads folder if it doesn't exist.
+	if err := os.MkdirAll(downloadDir, os.ModePerm); err != nil {
+		log.Panicf("folder creation error: %v\n", err)
+	}
+
+	// Create a folder for downloaded files if one does not already exist.
+	if err := os.MkdirAll(downloadDir+"/Downloaded", os.ModePerm); err != nil {
+		log.Panicf("folder creation error: %v\n", err)
+	}
+
 	startBot(getEnvValue("TG_BOT_TOKEN"))
 }
