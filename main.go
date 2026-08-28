@@ -26,7 +26,7 @@ func getEnvValue(v string) string {
 }
 
 func main() {
-	downloadDir := getEnvValue("DOWNLOAD_DIR")
+	downloadDir = getEnvValue("DOWNLOAD_DIR")
 	// Create a Downloads folder if it doesn't exist.
 	if err := os.MkdirAll(downloadDir, os.ModePerm); err != nil {
 		log.Panicf("folder creation error: %v\n", err)

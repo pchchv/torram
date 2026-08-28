@@ -10,6 +10,8 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
+var downloadDir string
+
 func handler(ctx context.Context, b *bot.Bot, update *models.Update) {
 	b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID: update.Message.Chat.ID,
