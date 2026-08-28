@@ -25,4 +25,6 @@ func getEnvValue(v string) string {
 	return value
 }
 
-func main() {}
+func main() {
+	runBot(getEnvValue("TG_BOT_TOKEN"))
+}
