@@ -22,8 +22,7 @@ func startBot(token string) {
 	defer cancel()
 
 	if token == "" {
-		log.Println("Error: The TG_BOT_TOKEN environment variable is not set")
-		return
+		log.Panic("Error: The TG_BOT_TOKEN environment variable is not set")
 	}
 
 	opts := []bot.Option{
@@ -33,7 +32,6 @@ func startBot(token string) {
 	b, err := bot.New(token, opts...)
 	if err != nil {
 		log.Panicf("bot initialization error: %v\n", err)
-		return
 	}
 
 	log.Println("Bot has been successfully started and is ready to go...")
