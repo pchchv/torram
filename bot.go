@@ -2,9 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
@@ -17,6 +21,30 @@ func handler(ctx context.Context, b *bot.Bot, update *models.Update) {
 		ChatID: update.Message.Chat.ID,
 		Text:   update.Message.Text,
 	})
+}
+
+// Helper function for downloading a file by URL.
+func downloadAndSaveFile(url, fileName string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("failed response, status: " + resp.Status)
+	}
+
+	// Forming the final path on the disk.
+	finalPath := filepath.Join(downloadDir, fileName)
+	out, err := os.Create(finalPath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	return err
 }
 
 func startBot(token string) {
