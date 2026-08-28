@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"os"
 	"os/signal"
 
@@ -9,7 +10,14 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-func runBot(token string) {
+func handler(ctx context.Context, b *bot.Bot, update *models.Update) {
+	b.SendMessage(ctx, &bot.SendMessageParams{
+		ChatID: update.Message.Chat.ID,
+		Text:   update.Message.Text,
+	})
+}
+
+func startBot(token string) {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
@@ -19,15 +27,10 @@ func runBot(token string) {
 
 	b, err := bot.New(token, opts...)
 	if err != nil {
-		panic(err)
+		log.Panicf("bot initialization error: %v\n", err)
+		return
 	}
 
+	log.Println("Bot has been successfully started and is ready to go...")
 	b.Start(ctx)
-}
-
-func handler(ctx context.Context, b *bot.Bot, update *models.Update) {
-	b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: update.Message.Chat.ID,
-		Text:   update.Message.Text,
-	})
 }
