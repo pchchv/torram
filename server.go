@@ -6,6 +6,12 @@ import (
 	"github.com/anacrolix/torrent"
 )
 
+// Task is a worker's assignment.
+type Task struct {
+	FileName string
+	FilePath string
+}
+
 func server() {
 	// Configuring of torrent-client.
 	cfg := torrent.NewDefaultClientConfig()
