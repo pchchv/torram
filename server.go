@@ -131,6 +131,13 @@ func server() {
 
 	log.Printf("The service has started.\nThe worker pool (%d) is ready to run...", maxWorkers)
 
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		scanWatchDir(taskChan, &processedFiles)
+	}
+
 	close(taskChan)
 	wg.Wait()
 }
