@@ -11,6 +11,8 @@ import (
 	"github.com/anacrolix/torrent"
 )
 
+const maxWorkers = 8
+
 // Task is a workers assignment.
 type Task struct {
 	FileName string
@@ -86,4 +88,15 @@ func server() {
 		log.Fatalf("Error starting the torrent-client: %v", err)
 	}
 	defer client.Close()
+
+	var processedFiles sync.Map // Protection against duplicate tasks in the pool
+	taskChan := make(chan Task, 100)
+	// Launching a fixed pool of workers
+	var wg sync.WaitGroup
+	for i := 1; i <= maxWorkers; i++ {
+		wg.Add(1)
+		go worker(i, &wg, taskChan, client, &processedFiles)
+	}
+
+	log.Printf("The service has started.\nThe worker pool (%d) is ready to run...", maxWorkers)
 }
