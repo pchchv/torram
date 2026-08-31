@@ -99,4 +99,7 @@ func server() {
 	}
 
 	log.Printf("The service has started.\nThe worker pool (%d) is ready to run...", maxWorkers)
+
+	close(taskChan)
+	wg.Wait()
 }
