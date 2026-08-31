@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -16,6 +17,32 @@ import (
 type Task struct {
 	FileName string
 	FilePath string
+}
+
+func scanWatchDir(taskChan chan<- Task, processedFiles *sync.Map) {
+	files, err := os.ReadDir(watchDir)
+	if err != nil {
+		log.Panicf("[Scanner] Folder read error: %v", err)
+	}
+
+	for _, file := range files {
+		if file.IsDir() || !strings.HasSuffix(strings.ToLower(file.Name()), ".torrent") {
+			continue
+		}
+
+		// Check atomically to see if the file is currently being processed.
+		if _, loaded := processedFiles.LoadOrStore(file.Name(), true); loaded {
+			continue
+		}
+
+		task := Task{
+			FileName: file.Name(),
+			FilePath: filepath.Join(watchDir, file.Name()),
+		}
+
+		log.Printf("[Scanner] Sending file %s to the worker pool", file.Name())
+		taskChan <- task
+	}
 }
 
 func downloadTorrent(workerID int, client *torrent.Client, torrentPath string) error {
