@@ -16,8 +16,6 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-var downloadDir string
-
 func handleUpdate(ctx context.Context, b *bot.Bot, update *models.Update) {
 	if update.Message == nil {
 		return
@@ -96,7 +94,7 @@ func downloadAndSaveFile(url, fileName string) error {
 	}
 
 	// Forming the final path on the disk.
-	finalPath := filepath.Join(downloadDir, fileName)
+	finalPath := filepath.Join(watchDir, fileName)
 	out, err := os.Create(finalPath)
 	if err != nil {
 		return err
