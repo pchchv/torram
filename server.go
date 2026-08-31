@@ -5,13 +5,12 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/anacrolix/torrent"
 )
-
-const maxWorkers = 8
 
 // Task is a workers assignment.
 type Task struct {
@@ -88,6 +87,11 @@ func server() {
 		log.Fatalf("Error starting the torrent-client: %v", err)
 	}
 	defer client.Close()
+
+	maxWorkers, err := strconv.Atoi(getEnvValue("MAX_NUM_WORKERS"))
+	if err != nil {
+		log.Panicf("Error getting the maximum number of workers: %e", err)
+	}
 
 	var processedFiles sync.Map // Protection against duplicate tasks in the pool
 	taskChan := make(chan Task, 100)
