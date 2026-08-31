@@ -46,4 +46,5 @@ func main() {
 	}
 
 	startBot(getEnvValue("TG_BOT_TOKEN"))
+	server()
 }
