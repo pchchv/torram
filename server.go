@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"log"
+	"os"
+	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/anacrolix/torrent"
@@ -50,6 +53,28 @@ func downloadTorrent(workerID int, client *torrent.Client, torrentPath string) e
 	// The On method returns a chan that closes when the torrent is 100% downloaded.
 	<-t.Complete().On()
 	return nil
+}
+
+func worker(id int, wg *sync.WaitGroup, tasks <-chan Task, client *torrent.Client, processedFiles *sync.Map) {
+	defer wg.Done()
+
+	for task := range tasks {
+		log.Printf("[Worker #%d] Starting to download the file: %s", id, task.FileName)
+		err := downloadTorrent(id, client, task.FilePath)
+		if err != nil {
+			log.Printf("[Worker #%d] Download error %s: %v", id, task.FileName, err)
+			processedFiles.Delete(task.FileName) // Reset the retry flag
+			continue
+		}
+
+		// Move the torrent file to the destination folder after the content has been successfully downloaded.
+		err = os.Rename(task.FilePath, filepath.Join(targetDir, task.FileName))
+		if err != nil {
+			log.Printf("[Worker #%d] Failed to move the torrent file %s: %v", id, task.FileName, err)
+		} else {
+			log.Printf("[Worker #%d] The torrent %s was successfully downloaded and moved to %s", id, task.FileName, targetDir)
+		}
+	}
 }
 
 func server() {
