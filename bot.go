@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"strings"
 
@@ -107,23 +106,17 @@ func (h *BotHandler) handleUpdate(ctx context.Context, b *bot.Bot, update *model
 	})
 }
 
-func startBot(token string) {
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer cancel()
-
-	if token == "" {
-		log.Panic("Error: The TG_BOT_TOKEN environment variable is not set")
-	}
-
+func runBot(ctx context.Context, cfg *Config) error {
+	handler := &BotHandler{cfg: cfg}
 	opts := []bot.Option{
-		bot.WithDefaultHandler(handleUpdate),
+		bot.WithDefaultHandler(handler.handleUpdate),
 	}
-
-	b, err := bot.New(token, opts...)
+	b, err := bot.New(cfg.BotToken, opts...)
 	if err != nil {
-		log.Panicf("bot initialization error: %v\n", err)
+		return fmt.Errorf("bot initialization: %w", err)
 	}
 
-	log.Println("Bot has been successfully started and is ready to go...")
+	log.Println("[Bot] Telegram bot has been successfully started")
 	b.Start(ctx)
+	return nil
 }
