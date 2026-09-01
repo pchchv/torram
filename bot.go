@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -19,6 +18,33 @@ import (
 // BotHandler encapsulates dependencies for handling updates
 type BotHandler struct {
 	cfg *Config
+}
+
+func (h *BotHandler) downloadAndSaveFile(ctx context.Context, url, fileName string) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed response, status: %s", resp.Status)
+	}
+
+	finalPath := filepath.Join(h.cfg.WatchDir, fileName)
+	out, err := os.Create(finalPath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	return err
 }
 
 func handleUpdate(ctx context.Context, b *bot.Bot, update *models.Update) {
@@ -84,30 +110,6 @@ func handleUpdate(ctx context.Context, b *bot.Bot, update *models.Update) {
 		ChatID: chatID,
 		Text:   "Please send me the torrent file or a direct link to it.",
 	})
-}
-
-// Helper function for downloading a file by URL.
-func downloadAndSaveFile(url, fileName string) error {
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return errors.New("failed response, status: " + resp.Status)
-	}
-
-	// Forming the final path on the disk.
-	finalPath := filepath.Join(watchDir, fileName)
-	out, err := os.Create(finalPath)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	_, err = io.Copy(out, resp.Body)
-	return err
 }
 
 func startBot(token string) {
