@@ -16,6 +16,11 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
+// BotHandler encapsulates dependencies for handling updates
+type BotHandler struct {
+	cfg *Config
+}
+
 func handleUpdate(ctx context.Context, b *bot.Bot, update *models.Update) {
 	if update.Message == nil {
 		return
