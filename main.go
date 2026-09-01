@@ -17,15 +17,13 @@ func init() {
 	}
 }
 
-func getEnvValue(v string) string {
-	// Getting a value.
-	// Outputs a panic if the value is missing.
+func getEnvValue(v string) (string, error) {
 	value, exist := os.LookupEnv(v)
 	if !exist {
-		log.Panicf("Value %v does not exist", v)
+		return value, fmt.Errorf("Value %v does not exist", v)
 	}
 
-	return value
+	return value, nil
 }
 
 func initDirs() error {
