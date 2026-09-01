@@ -47,13 +47,13 @@ func (h *BotHandler) downloadAndSaveFile(ctx context.Context, url, fileName stri
 	return err
 }
 
-func handleUpdate(ctx context.Context, b *bot.Bot, update *models.Update) {
+func (h *BotHandler) handleUpdate(ctx context.Context, b *bot.Bot, update *models.Update) {
 	if update.Message == nil {
 		return
 	}
 
 	chatID := update.Message.Chat.ID
-	// 1. User uploaded a file.
+	// 1. Processing a document (.torrent file)
 	if update.Message.Document != nil {
 		doc := update.Message.Document
 		b.SendMessage(ctx, &bot.SendMessageParams{
@@ -61,19 +61,16 @@ func handleUpdate(ctx context.Context, b *bot.Bot, update *models.Update) {
 			Text:   fmt.Sprintf("File received: %s. Downloading...", doc.FileName),
 		})
 
-		// Getting the internal file path on Telegram servers.
 		fileInfo, err := b.GetFile(ctx, &bot.GetFileParams{FileID: doc.FileID})
 		if err != nil {
 			b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "Unable to retrieve information about the file."})
 			return
 		}
 
-		// Generate the download URL (bot token required).
 		downloadURL := fmt.Sprintf("https://api.telegram.org/file/bot%s/%s", b.Token(), fileInfo.FilePath)
-		// Download and save the file.
-		if err = downloadAndSaveFile(downloadURL, doc.FileName); err != nil {
+		if err = h.downloadAndSaveFile(ctx, downloadURL, doc.FileName); err != nil {
 			b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "Error saving the file to the server."})
-			log.Printf("Downloading error: %v\n", err)
+			log.Printf("[Bot] Downloading error: %v", err)
 			return
 		}
 
@@ -81,7 +78,7 @@ func handleUpdate(ctx context.Context, b *bot.Bot, update *models.Update) {
 		return
 	}
 
-	// 2. The user posted a link in the text.
+	// 2. Handling Links in the Text
 	text := strings.TrimSpace(update.Message.Text)
 	if strings.HasPrefix(text, "http://") || strings.HasPrefix(text, "https://") {
 		b.SendMessage(ctx, &bot.SendMessageParams{
@@ -89,16 +86,14 @@ func handleUpdate(ctx context.Context, b *bot.Bot, update *models.Update) {
 			Text:   "A link has been found. Trying to download...",
 		})
 
-		// Extract the file name from the URL (i.e., from the end of the link).
 		fileName := filepath.Base(text)
 		if fileName == "" || fileName == "." || fileName == "/" {
-			fileName = "downloaded_file"
+			fileName = "downloaded_file.torrent"
 		}
 
-		err := downloadAndSaveFile(text, fileName)
-		if err != nil {
+		if err := h.downloadAndSaveFile(ctx, text, fileName); err != nil {
 			b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "The file could not be downloaded from the link. Please check if the link is working."})
-			fmt.Printf("Error downloading from the link: %v\n", err)
+			log.Printf("[Bot] Error downloading from link: %v", err)
 			return
 		}
 
