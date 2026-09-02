@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -86,7 +86,7 @@ func downloadTorrent(ctx context.Context, workerID int, client *torrent.Client, 
 
 	select {
 	case <-t.Complete().On():
-	return nil
+		return nil
 	case <-ctx.Done():
 		return ctx.Err()
 	}
@@ -106,56 +106,53 @@ func worker(ctx context.Context, id int, wg *sync.WaitGroup, tasks <-chan Task, 
 
 			log.Printf("[Worker #%d] Starting to download: %s", id, task.FileName)
 			err := downloadTorrent(ctx, id, client, task.FilePath)
-		if err != nil {
-			log.Printf("[Worker #%d] Download error %s: %v", id, task.FileName, err)
+			if err != nil {
+				log.Printf("[Worker #%d] Download error %s: %v", id, task.FileName, err)
 				processedFiles.Delete(task.FileName)
-			continue
-		}
+				continue
+			}
 
-		// Move the torrent file to the destination folder after the content has been successfully downloaded.
+			// Move the torrent file to the destination folder after the content has been successfully downloaded.
 			destPath := filepath.Join(cfg.TargetDir, task.FileName)
 			if err = os.Rename(task.FilePath, destPath); err != nil {
 				log.Printf("[Worker #%d] Failed to move torrent file %s: %v", id, task.FileName, err)
-		} else {
+			} else {
 				log.Printf("[Worker #%d] Torrent %s successfully downloaded and moved to %s", id, task.FileName, cfg.TargetDir)
 			}
 		}
 	}
 }
 
-func server() {
-	// Configuring of torrent-client.
-	cfg := torrent.NewDefaultClientConfig()
-	cfg.DataDir = outputDir
-	client, err := torrent.NewClient(cfg)
+func runServer(ctx context.Context, cfg *Config) error {
+	tCfg := torrent.NewDefaultClientConfig()
+	tCfg.DataDir = cfg.OutputDir
+	client, err := torrent.NewClient(tCfg)
 	if err != nil {
-		log.Fatalf("Error starting the torrent-client: %v", err)
+		return fmt.Errorf("starting torrent client: %w", err)
 	}
 	defer client.Close()
 
-	maxWorkers, err := strconv.Atoi(getEnvValue("MAX_NUM_WORKERS"))
-	if err != nil {
-		log.Panicf("Error getting the maximum number of workers: %e", err)
-	}
-
-	var processedFiles sync.Map // Protection against duplicate tasks in the pool
-	taskChan := make(chan Task, 100)
-	// Launching a fixed pool of workers
 	var wg sync.WaitGroup
-	for i := 1; i <= maxWorkers; i++ {
+	var processedFiles sync.Map
+	taskChan := make(chan Task, 100)
+	for i := 1; i <= cfg.MaxWorkers; i++ {
 		wg.Add(1)
-		go worker(i, &wg, taskChan, client, &processedFiles)
+		go worker(ctx, i, &wg, taskChan, client, &processedFiles, cfg)
 	}
 
-	log.Printf("The service has started.\nThe worker pool (%d) is ready to run...", maxWorkers)
+	log.Printf("[Server] Service started. Worker pool (%d) is ready", cfg.MaxWorkers)
 
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		scanWatchDir(taskChan, &processedFiles)
+	for {
+		select {
+		case <-ctx.Done():
+			close(taskChan)
+			wg.Wait()
+			return nil
+		case <-ticker.C:
+			scanWatchDir(cfg, taskChan, &processedFiles)
+		}
 	}
-
-	close(taskChan)
-	wg.Wait()
 }
