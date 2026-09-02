@@ -13,16 +13,16 @@ import (
 	"github.com/anacrolix/torrent"
 )
 
-// Task is a workers assignment.
 type Task struct {
 	FileName string
 	FilePath string
 }
 
-func scanWatchDir(taskChan chan<- Task, processedFiles *sync.Map) {
-	files, err := os.ReadDir(watchDir)
+func scanWatchDir(cfg *Config, taskChan chan<- Task, processedFiles *sync.Map) {
+	files, err := os.ReadDir(cfg.WatchDir)
 	if err != nil {
-		log.Panicf("[Scanner] Folder read error: %v", err)
+		log.Printf("[Scanner] Folder read error (will retry): %v", err)
+		return
 	}
 
 	for _, file := range files {
@@ -30,14 +30,13 @@ func scanWatchDir(taskChan chan<- Task, processedFiles *sync.Map) {
 			continue
 		}
 
-		// Check atomically to see if the file is currently being processed.
 		if _, loaded := processedFiles.LoadOrStore(file.Name(), true); loaded {
 			continue
 		}
 
 		task := Task{
 			FileName: file.Name(),
-			FilePath: filepath.Join(watchDir, file.Name()),
+			FilePath: filepath.Join(cfg.WatchDir, file.Name()),
 		}
 
 		log.Printf("[Scanner] Sending file %s to the worker pool", file.Name())
