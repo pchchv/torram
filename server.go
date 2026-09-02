@@ -92,24 +92,33 @@ func downloadTorrent(ctx context.Context, workerID int, client *torrent.Client, 
 	}
 }
 
-func worker(id int, wg *sync.WaitGroup, tasks <-chan Task, client *torrent.Client, processedFiles *sync.Map) {
+func worker(ctx context.Context, id int, wg *sync.WaitGroup, tasks <-chan Task, client *torrent.Client, processedFiles *sync.Map, cfg *Config) {
 	defer wg.Done()
 
-	for task := range tasks {
-		log.Printf("[Worker #%d] Starting to download the file: %s", id, task.FileName)
-		err := downloadTorrent(id, client, task.FilePath)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case task, ok := <-tasks:
+			if !ok {
+				return
+			}
+
+			log.Printf("[Worker #%d] Starting to download: %s", id, task.FileName)
+			err := downloadTorrent(ctx, id, client, task.FilePath)
 		if err != nil {
 			log.Printf("[Worker #%d] Download error %s: %v", id, task.FileName, err)
-			processedFiles.Delete(task.FileName) // Reset the retry flag
+				processedFiles.Delete(task.FileName)
 			continue
 		}
 
 		// Move the torrent file to the destination folder after the content has been successfully downloaded.
-		err = os.Rename(task.FilePath, filepath.Join(targetDir, task.FileName))
-		if err != nil {
-			log.Printf("[Worker #%d] Failed to move the torrent file %s: %v", id, task.FileName, err)
+			destPath := filepath.Join(cfg.TargetDir, task.FileName)
+			if err = os.Rename(task.FilePath, destPath); err != nil {
+				log.Printf("[Worker #%d] Failed to move torrent file %s: %v", id, task.FileName, err)
 		} else {
-			log.Printf("[Worker #%d] The torrent %s was successfully downloaded and moved to %s", id, task.FileName, targetDir)
+				log.Printf("[Worker #%d] Torrent %s successfully downloaded and moved to %s", id, task.FileName, cfg.TargetDir)
+			}
 		}
 	}
 }
