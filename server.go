@@ -44,18 +44,23 @@ func scanWatchDir(cfg *Config, taskChan chan<- Task, processedFiles *sync.Map) {
 	}
 }
 
-func downloadTorrent(workerID int, client *torrent.Client, torrentPath string) error {
+func downloadTorrent(ctx context.Context, workerID int, client *torrent.Client, torrentPath string) error {
 	t, err := client.AddTorrentFromFile(torrentPath)
 	if err != nil {
 		return err
 	}
 	defer t.Drop()
 
-	<-t.GotInfo() // waiting for metadata
+	select {
+	case <-t.GotInfo():
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+
 	t.DownloadAll()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	doneProgress := make(chan struct{})
+	defer close(doneProgress)
 
 	go func() {
 		ticker := time.NewTicker(3 * time.Second)
@@ -63,23 +68,28 @@ func downloadTorrent(workerID int, client *torrent.Client, torrentPath string) e
 		for {
 			select {
 			case <-ticker.C:
-				var pct float64
 				stats := t.Stats()
 				total := t.Info().TotalLength()
 				completed := t.BytesCompleted()
+				var pct float64
 				if total > 0 {
 					pct = (float64(completed) / float64(total)) * 100
 				}
 				log.Printf("[Worker #%d] %s: %.2f%% (%d/%d byte) | Peers: %d", workerID, t.Name(), pct, completed, total, stats.ActivePeers)
+			case <-doneProgress: // Безопасный выход без утечек памяти
+				return
 			case <-ctx.Done():
 				return
 			}
 		}
 	}()
 
-	// The On method returns a chan that closes when the torrent is 100% downloaded.
-	<-t.Complete().On()
+	select {
+	case <-t.Complete().On():
 	return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 func worker(id int, wg *sync.WaitGroup, tasks <-chan Task, client *torrent.Client, processedFiles *sync.Map) {
