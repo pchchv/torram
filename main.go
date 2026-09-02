@@ -8,7 +8,14 @@ import (
 	"github.com/pchchv/env"
 )
 
-var watchDir, targetDir, outputDir string
+// Config stores all the service's settings
+type Config struct {
+	WatchDir   string
+	TargetDir  string
+	OutputDir  string
+	BotToken   string
+	MaxWorkers int
+}
 
 func init() {
 	// Load values from .env into the system.
