@@ -65,13 +65,10 @@ func getEnvValue(v string) (string, error) {
 	return value, nil
 }
 
-func initDirs() error {
-	watchDir = getEnvValue("DOWNLOAD_DIR")
-	targetDir = watchDir + "/Downloaded"
-	outputDir = watchDir + "/Files"
-	for _, dir := range []string{watchDir, targetDir, outputDir} {
+func ensureDirs(cfg *Config) error {
+	for _, dir := range []string{cfg.WatchDir, cfg.TargetDir, cfg.OutputDir} {
 		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-			return fmt.Errorf("Failed to create directory %s: %v", dir, err)
+			return fmt.Errorf("creating directory %s: %w", dir, err)
 		}
 	}
 	return nil
