@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"strconv"
 
 	"github.com/pchchv/env"
 )
@@ -15,6 +17,36 @@ type Config struct {
 	OutputDir  string
 	BotToken   string
 	MaxWorkers int
+}
+
+func loadConfig() (*Config, error) {
+	watchDir, err := getEnvValue("DOWNLOAD_DIR")
+	if err != nil {
+		return nil, err
+	}
+
+	botToken, err := getEnvValue("TG_BOT_TOKEN")
+	if err != nil {
+		return nil, err
+	}
+
+	maxWorkersStr, err := getEnvValue("MAX_NUM_WORKERS")
+	if err != nil {
+		return nil, err
+	}
+
+	maxWorkers, err := strconv.Atoi(maxWorkersStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid MAX_NUM_WORKERS value: %w", err)
+	}
+
+	return &Config{
+		WatchDir:   watchDir,
+		TargetDir:  filepath.Join(watchDir, "Downloaded"),
+		OutputDir:  filepath.Join(watchDir, "Files"),
+		BotToken:   botToken,
+		MaxWorkers: maxWorkers,
+	}, nil
 }
 
 func init() {
