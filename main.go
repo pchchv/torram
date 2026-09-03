@@ -75,6 +75,11 @@ func ensureDirs(cfg *Config) error {
 }
 
 func main() {
+	cfg, err := loadConfig()
+	if err != nil {
+		log.Fatalf("[Main] Configuration error: %v", err)
+	}
+
 	if err := initDirs(); err != nil {
 		log.Panic(err)
 	}
