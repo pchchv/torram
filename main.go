@@ -84,6 +84,12 @@ func main() {
 		log.Fatalf("[Main] Directory initialization error: %v", err)
 	}
 
+	// Root context for a graceful shutdown of the entire application
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	log.Println("[Main] Starting application modules...")
+
 	startBot(getEnvValue("TG_BOT_TOKEN"))
 	server()
 }
