@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strconv"
+	"syscall"
 
 	"github.com/pchchv/env"
 )
@@ -90,12 +93,18 @@ func main() {
 
 	log.Println("[Main] Starting application modules...")
 
-	startBot(getEnvValue("TG_BOT_TOKEN"))
-
 	// Running a torrent server (it will launch a pool of workers and a scanner internally)
 	go func() {
 		if err := runServer(ctx, cfg); err != nil {
 			log.Printf("[Main] Server stopped with error: %v", err)
+			stop()
+		}
+	}()
+
+	// Running a Telegram Bot
+	go func() {
+		if err := runBot(ctx, cfg); err != nil {
+			log.Printf("[Main] Bot stopped with error: %v", err)
 			stop()
 		}
 	}()
