@@ -91,7 +91,14 @@ func main() {
 	log.Println("[Main] Starting application modules...")
 
 	startBot(getEnvValue("TG_BOT_TOKEN"))
-	server()
+
+	// Running a torrent server (it will launch a pool of workers and a scanner internally)
+	go func() {
+		if err := runServer(ctx, cfg); err != nil {
+			log.Printf("[Main] Server stopped with error: %v", err)
+			stop()
+		}
+	}()
 
 	// Wait for the termination signal
 	<-ctx.Done()
