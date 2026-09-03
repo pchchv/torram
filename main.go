@@ -80,8 +80,8 @@ func main() {
 		log.Fatalf("[Main] Configuration error: %v", err)
 	}
 
-	if err := initDirs(); err != nil {
-		log.Panic(err)
+	if err := ensureDirs(cfg); err != nil {
+		log.Fatalf("[Main] Directory initialization error: %v", err)
 	}
 
 	startBot(getEnvValue("TG_BOT_TOKEN"))
