@@ -92,4 +92,8 @@ func main() {
 
 	startBot(getEnvValue("TG_BOT_TOKEN"))
 	server()
+
+	// Wait for the termination signal
+	<-ctx.Done()
+	log.Println("[Main] Shutting down gracefully...")
 }
