@@ -54,3 +54,10 @@ MAX_NUM_WORKERS=3
    ```bash
    go run .
    ```
+
+## 🔒 Error Handling & Resiliency
+
+- **Self-Healing Scanner:** If the target directory becomes temporarily unavailable (e.g., a disconnected network-attached storage device), the directory scanner logs the anomaly and continues running. It retries cleanly on the next 5-second interval without dropping the application runtime.
+- **Duplicate Prevention:** Using a thread-safe `sync.Map` workflow state machine, files that are currently in the queue or being actively downloaded will not be fed to workers twice.
+- **Failure Recovery:** If a worker encounters a network drop or corrupted file payload, it automatically flushes the tracking footprint out of the memory matrix, allowing the application to attempt processing the file again on subsequent scan loops.
+- **Resource Leak Safeguards:** Active progress tracking tickers are strictly coupled to contextual lifetimes. When a download completes or the application undergoes an interrupt, execution tracks immediately return, preventing goroutine leaks.
