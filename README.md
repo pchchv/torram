@@ -10,3 +10,23 @@ The service handles files asynchronously using a resilient worker pool architect
 - **Robust Folder Monitoring:** A scheduled background scanner safely polls a directory for incoming torrent tasks.
 - **Graceful Shutdown:** Full application context lifecycle management (`SIGINT`/`SIGTERM`) ensuring that ongoing file operations or active downloads terminate cleanly without corrupting state.
 - **Cross-Platform Pathing:** Built entirely using native Go pathing mechanisms (`filepath.Join`), ensuring safe executions across Linux, macOS, and Windows.
+
+## ⚙️ Configuration
+
+The application is configured using environment variables. Create a `.env` file in the root directory of your project:
+
+```env
+# Telegram Bot Token obtained from @BotFather
+TG_BOT_TOKEN=123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ
+
+# Root directory path to monitor and output downloaded payloads
+DOWNLOAD_DIR=/path/to/your/torrent/workspace
+
+# Maximum number of concurrent torrent downloads allowed at the same time
+MAX_NUM_WORKERS=3
+```
+
+### Directory Structure Generated Automatically:
+- **Watch Directory (`DOWNLOAD_DIR`):** The landing zone where incoming `.torrent` files are saved.
+- **Target Directory (`DOWNLOAD_DIR/Downloaded`):** The archive folder where `.torrent` files are safely moved *after* successful data payload completion.
+- **Output Directory (`DOWNLOAD_DIR/Files`):** The destination where the actual torrent contents (movies, music, software) are written during download.
