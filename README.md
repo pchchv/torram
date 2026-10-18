@@ -30,3 +30,27 @@ MAX_NUM_WORKERS=3
 - **Watch Directory (`DOWNLOAD_DIR`):** The landing zone where incoming `.torrent` files are saved.
 - **Target Directory (`DOWNLOAD_DIR/Downloaded`):** The archive folder where `.torrent` files are safely moved *after* successful data payload completion.
 - **Output Directory (`DOWNLOAD_DIR/Files`):** The destination where the actual torrent contents (movies, music, software) are written during download.
+
+## 🏃 Getting Started
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/pchchv/torram
+   cd torram
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   go mod tidy
+   ```
+
+3. **Set up your environment variables:**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your real credentials
+   ```
+
+4. **Run the service:**
+   ```bash
+   go run .
+   ```
