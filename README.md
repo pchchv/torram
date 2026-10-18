@@ -11,6 +11,36 @@ The service handles files asynchronously using a resilient worker pool architect
 - **Graceful Shutdown:** Full application context lifecycle management (`SIGINT`/`SIGTERM`) ensuring that ongoing file operations or active downloads terminate cleanly without corrupting state.
 - **Cross-Platform Pathing:** Built entirely using native Go pathing mechanisms (`filepath.Join`), ensuring safe executions across Linux, macOS, and Windows.
 
+```
+       [ User ]
+          │  (Sends .torrent file / URL link)
+          ▼
+   ┌──────────────┐
+   │ Telegram Bot │
+   └──────┬───────┘
+          │ (Downloads file & saves to WatchDir)
+          ▼
+   ┌──────────────┐
+   │   WatchDir   │ ◄───┐
+   └──────┬───────┘     │
+          │             │ (Scans every 5s)
+          ▼             │
+   ┌──────────────┐     │
+   │ Directory    ├─────┘
+   │   Scanner    │
+   └──────┬───────┘
+          │ (Dispatches Task)
+          ▼
+   ┌──────────────┐
+   │ Worker Pool  │
+   └──────┬───────┘
+          │ (Downloads data via anacrolix/torrent)
+          ▼
+   ┌──────────────┐
+   │  OutputDir   │ (Final Payload Location)
+   └──────────────┘
+```
+
 ## ⚙️ Configuration
 
 The application is configured using environment variables. Create a `.env` file in the root directory of your project:
