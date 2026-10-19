@@ -62,7 +62,7 @@ func init() {
 func getEnvValue(v string) (string, error) {
 	value, exist := os.LookupEnv(v)
 	if !exist {
-		return value, fmt.Errorf("Value %v does not exist", v)
+		return value, fmt.Errorf("value %v does not exist", v)
 	}
 
 	return value, nil

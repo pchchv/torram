@@ -29,7 +29,10 @@ func (h *BotHandler) downloadAndSaveFile(ctx context.Context, url, fileName stri
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed response, status: %s", resp.Status)
@@ -40,7 +43,9 @@ func (h *BotHandler) downloadAndSaveFile(ctx context.Context, url, fileName stri
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func () {
+		_ = out.Close()
+	}()
 
 	_, err = io.Copy(out, resp.Body)
 	return err
@@ -55,32 +60,32 @@ func (h *BotHandler) handleUpdate(ctx context.Context, b *bot.Bot, update *model
 	// 1. Processing a document (.torrent file)
 	if update.Message.Document != nil {
 		doc := update.Message.Document
-		b.SendMessage(ctx, &bot.SendMessageParams{
+		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
 			ChatID: chatID,
 			Text:   fmt.Sprintf("File received: %s. Downloading...", doc.FileName),
 		})
 
 		fileInfo, err := b.GetFile(ctx, &bot.GetFileParams{FileID: doc.FileID})
 		if err != nil {
-			b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "Unable to retrieve information about the file."})
+			_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "Unable to retrieve information about the file."})
 			return
 		}
 
 		downloadURL := fmt.Sprintf("https://api.telegram.org/file/bot%s/%s", b.Token(), fileInfo.FilePath)
 		if err = h.downloadAndSaveFile(ctx, downloadURL, doc.FileName); err != nil {
-			b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "Error saving the file to the server."})
+			_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "Error saving the file to the server."})
 			log.Printf("[Bot] Downloading error: %v", err)
 			return
 		}
 
-		b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "The file has been successfully saved!"})
+		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "The file has been successfully saved!"})
 		return
 	}
 
 	// 2. Handling Links in the Text
 	text := strings.TrimSpace(update.Message.Text)
 	if strings.HasPrefix(text, "http://") || strings.HasPrefix(text, "https://") {
-		b.SendMessage(ctx, &bot.SendMessageParams{
+		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
 			ChatID: chatID,
 			Text:   "A link has been found. Trying to download...",
 		})
@@ -91,16 +96,16 @@ func (h *BotHandler) handleUpdate(ctx context.Context, b *bot.Bot, update *model
 		}
 
 		if err := h.downloadAndSaveFile(ctx, text, fileName); err != nil {
-			b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "The file could not be downloaded from the link. Please check if the link is working."})
+			_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "The file could not be downloaded from the link. Please check if the link is working."})
 			log.Printf("[Bot] Error downloading from link: %v", err)
 			return
 		}
 
-		b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "The file has been successfully saved!"})
+		_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "The file has been successfully saved!"})
 		return
 	}
 
-	b.SendMessage(ctx, &bot.SendMessageParams{
+	_, _ = b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID: chatID,
 		Text:   "Please send me the torrent file or a direct link to it.",
 	})
