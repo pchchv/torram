@@ -1,4 +1,5 @@
 # torram — Torrent Telegram Downloader
+[![CI](https://github.com/pchchv/express/workflows/CI/badge.svg)](https://github.com/pchchv/express/actions?query=workflow%3ACI+event%3Apush)
 
 A lightweight, concurrent, and robust Go-based service that automatically downloads torrent files or direct torrent links sent via a Telegram bot.   
 The service handles files asynchronously using a resilient worker pool architecture and ensures graceful shutdown on system interrupts.
