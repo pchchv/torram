@@ -71,15 +71,15 @@ MAX_NUM_WORKERS=3
    cd torram
    ```
 
-2. **Install dependencies:**
-   ```bash
-   go mod tidy
-   ```
-
-3. **Set up your environment variables:**
+2. **Set up environment configuration**
    ```bash
    cp .env.example .env
    # Edit .env with your real credentials
+   ```
+
+3. **Install dependencies:**
+   ```bash
+   go mod tidy
    ```
 
 4. **Run the service:**
