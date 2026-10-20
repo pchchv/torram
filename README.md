@@ -74,17 +74,40 @@ MAX_NUM_WORKERS=3
 2. **Set up environment configuration**
    ```bash
    cp .env.example .env
-   # Edit .env with your real credentials
    ```
 
-3. **Install dependencies:**
+* **For Local Execution:** Set `DOWNLOAD_DIR` to any local folder path (e.g., `/home/user/torrents`).
+* **For Docker Execution:** Set `DOWNLOAD_DIR` strictly to `/data` (to match the internal container volume).
+
+### Method A: Running Locally
+
+1. **Install dependencies:**
    ```bash
    go mod tidy
    ```
 
-4. **Run the service:**
+2. **Run the service:**
    ```bash
    go run .
+   ```
+
+---
+
+### Method B: Running via Docker Compose
+
+1. Build and launch the container in the background (detached mode):
+   ```bash
+   docker compose up -d --build
+   ```
+
+2. Follow the real-time logs to track active downloads:
+   ```bash
+   docker compose logs -f
+   ```
+
+3. To stop the service safely:
+   ```bash
+   docker compose down
    ```
 
 ## 🔒 Error Handling & Resiliency
