@@ -91,8 +91,6 @@ MAX_NUM_WORKERS=3
    go run .
    ```
 
----
-
 ### Method B: Running via Docker Compose
 
 1. Build and launch the container in the background (detached mode):
