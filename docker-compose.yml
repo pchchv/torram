@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  torram:
+    build: .
+    container_name: torram
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      # Mounts your local downloads directory inside the container
+      # Make sure DOWNLOAD_DIR in your .env is set to /data
+      - ./downloads:/data
